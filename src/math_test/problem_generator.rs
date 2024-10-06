@@ -9,30 +9,49 @@ pub trait ProblemGenerator {
 }
 
 pub struct MultiplyProblemGenerator {
-    min_value: Int,
-    max_value: Int,
-    randy: RefCell<ThreadRng>,
+    randy: Randy,
 }
 
 impl MultiplyProblemGenerator {
     pub fn new(min_value: Int, max_value: Int) -> Self {
         Self {
-            min_value,
-            max_value,
-            randy: RefCell::new(rand::thread_rng()),
+            randy: Randy::new(min_value, max_value),
         }
-    }
-
-    fn get_random_value(&self) -> Int {
-        self.randy.borrow_mut().gen_range(self.min_value..(self.max_value+1))
     }
 }
 
 impl ProblemGenerator for MultiplyProblemGenerator {
     fn generate_problem(&self) -> Problem {
-        let a = self.get_random_value();
-        let b = self.get_random_value();
+        let a = self.randy.get_random_value_but_prefer_not_1();
+        let b = self.randy.get_random_value_but_prefer_not_1();
         let question = format!("{} * {} = ?", a, b);
         Problem::new(question, a*b)
+    }
+}
+
+struct Randy {
+    min_value: Int,
+    max_value: Int,
+    generator: RefCell<ThreadRng>,
+}
+
+impl Randy {
+    pub fn new(min_value: Int, max_value: Int) -> Self {
+        Self {
+            min_value,
+            max_value,
+            generator: RefCell::new(rand::thread_rng()),
+        }
+    }
+
+    pub fn get_random_value(&self) -> Int {
+        self.generator.borrow_mut().gen_range(self.min_value..(self.max_value+1))
+    }
+
+    pub fn get_random_value_but_prefer_not_1(&self) -> Int {
+        match self.get_random_value() {
+            1 => self.get_random_value(),
+            x => x,
+        }
     }
 }
