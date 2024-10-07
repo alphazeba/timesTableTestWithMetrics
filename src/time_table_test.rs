@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, rc::Rc, time::Instant};
+use std::rc::Rc;
 
 use text_io::try_read;
 
