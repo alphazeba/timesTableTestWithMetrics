@@ -25,7 +25,7 @@ impl ProblemGenerator for MultiplyProblemGenerator {
         let a = self.randy.get_random_value_but_prefer_not_1();
         let b = self.randy.get_random_value_but_prefer_not_1();
         let question = format!("{} * {} = ?", a, b);
-        Problem::new(question, a*b)
+        Problem::new(question, a*b, a, b)
     }
 }
 

@@ -6,3 +6,6 @@ edition = "2021"
 [dependencies]
 rand = "0.8.5"
 text_io = "0.1.12"
+time = "0.3.36"
+rusqlite = { version = "0.32.0", features = ["bundled", "time"] }
+uuid = { version = "1.10.0", features = ["v4", "fast-rng"] }
