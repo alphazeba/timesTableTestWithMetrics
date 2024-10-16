@@ -1,16 +1,16 @@
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, Row, Rows};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-use crate::math_test::problem::Problem;
+use crate::math_test::{constants::Int, problem::Problem};
 
 pub struct MetricWriter {
     db: Connection,
     test_id: String,
 }
-
+type ProblemTypeType = u8;
 const METRICS_DB_NAME: &str = "timeTableTestMetrics.db";
-const PROBLEM_TYPE_MULTIPLICATION: u8 = 0;
+const PROBLEM_TYPE_MULTIPLICATION: ProblemTypeType = 0;
 
 pub struct MetricInstance {
     start_time: OffsetDateTime,
@@ -66,6 +66,51 @@ impl MetricWriter {
             Ok(_updated) => (),
             Err(err) => println!("update failed: {}", err),
         }
+    }
+
+    pub fn get_wrongest_problems(&self) -> Vec<Problem> {
+        let mut statement = self.db.prepare(
+            "select a, b, problem_type, avg(num_incorrect) as wrong \
+            from timeTableMetrics \
+            group by a, b, problem_type \
+            order by wrong desc \
+            limit 10").expect("preparing wrongest query failed");
+        Self::parse_query_results(
+            statement.query([])
+            .expect("binding params failed, but there shouldn't be params"))
+    }
+
+    pub fn get_slowest_problems(&self) -> Vec<Problem> {
+        let mut statement = self.db.prepare(
+            "select a, b, problem_type, avg(duration) as wrong \
+            from timeTableMetrics \
+            group by a, b, problem_type \
+            order by wrong desc \
+            limit 10").expect("preparing wrongest query failed");
+        Self::parse_query_results(
+            statement.query([])
+            .expect("binding params failed, but there shouldn't be params"))
+    }
+
+    fn parse_query_results(mut query_result: Rows) -> Vec<Problem> {
+        let mut problems: Vec<Problem> = Vec::new();
+        loop {
+            match query_result.next() {
+                Err(e) => panic!("failed query!: {}", e),
+                Ok(thing) => match thing {
+                    Some(thing) => problems.push(Self::parse_row(thing)),
+                    None => break,
+                },
+            }
+        }
+        problems
+    }
+
+    fn parse_row(row: &Row) -> Problem {
+        let a: Int = row.get(0).expect("couldn't parse a");
+        let b: Int = row.get(1).expect("couldn't parse b");
+        let problem_type: ProblemTypeType = row.get(2).expect("couldn't parse problem_type");
+        Problem::new(format!("{} * {}", a, b), a*b, a, b)
     }
 }
 
